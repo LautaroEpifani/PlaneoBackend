@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "module": "CommonJS",  // Usa import/export en lugar de require
+    "target": "ESNext",  // Opcional, si prefieres las características más modernas de JavaScript
+    "esModuleInterop": true,  // Para trabajar con módulos de CommonJS
+    "allowSyntheticDefaultImports": true,  // Para importar módulos sin exportación default
+    "moduleResolution": "node",  // Resolver módulos como Node.js lo hace
+    "strict": true,  // Habilita comprobaciones estrictas
+    "skipLibCheck": true,  // Omite la comprobación de tipos de bibliotecas
+    "outDir": "./dist",  // Dirección donde se colocarán los archivos compilados
+    "rootDir": "./src"  // Dirección de tus archivos fuente
+  },
+  "include": [
+    "src/**/*"  // Incluye todos los archivos dentro de src
+  ]
+}
