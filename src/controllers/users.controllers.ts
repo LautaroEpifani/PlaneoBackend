@@ -92,12 +92,12 @@ async function login(req: Request, res: Response) {
   };
 
   const token = jwt.sign(userToSend, process.env.TOKEN_SECRET!, {
-    expiresIn: "1d",
+    expiresIn: 3600,
   });
 
   res.cookie("access_token", token, {
     httpOnly: true,
-    maxAge: 60 * 60 * 24,
+    maxAge: 60 * 60 * 24 * 1000,
     sameSite: "none",
     secure: true,
   });
@@ -121,4 +121,15 @@ async function checkSession(req: Request, res: Response) {
   res.status(200).send({ message: "Session is valid", user: payload });
 }
 
-export { getAllUsers, getOneUser, addOneUser, login, checkSession };
+async function logout(req: Request, res: Response) {
+  res.clearCookie('access_token', {
+    httpOnly: true,
+    sameSite: 'none',
+    secure: true,
+  });
+
+  res.send({ message: 'Logged out successfully' });
+}
+
+
+export { getAllUsers, getOneUser, addOneUser, login, checkSession, logout };
