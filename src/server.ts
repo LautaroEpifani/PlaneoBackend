@@ -1,14 +1,15 @@
 import 'dotenv/config';
 import 'express-async-errors';
-import jwt from 'jsonwebtoken';
 import cookieParser from 'cookie-parser';
 import express, { NextFunction, Request, Response } from 'express';
 import cors from 'cors';
 import userRouter from './routes/usersRoutes';
+import cardsRouter from './routes/cardsRoutes';
 import ValidationError from './errors/ValidationError';
 import HttpError from './errors/HttpError';
-import { v2 as cloudinary } from 'cloudinary'
+// import { v2 as cloudinary } from 'cloudinary'
 import { checkSession } from './controllers/users.controllers';
+
 
 const app = express();
 
@@ -29,6 +30,8 @@ app.get('/', (req, res) => {
 });
 
 app.use('/users', userRouter);
+
+app.use('/cards', cardsRouter);
 
 app.get('/verifySession', checkSession)
 
