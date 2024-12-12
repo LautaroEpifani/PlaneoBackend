@@ -50,11 +50,13 @@ export const createCard = async (req: Request, res: Response) => {
 export const updateCard = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { cardName, description, assignedTo, status, order } = req.body; // Ahora se incluye el status
+    const { cardName, description, createdBy, assignedTo, status, order } = req.body; 
+
+    const updatedAt = new Date().toISOString();
   
     const updatedCard = await db
       .update(cards)
-      .set({ cardName, description, assignedTo, status, order })
+      .set({ cardName, description, createdBy, assignedTo, status, order, updatedAt })
       .where(eq(cards.id, Number(id)))
       .returning();
 
@@ -96,8 +98,6 @@ export const updateAllCards = async (updatedCards: Array<{ id: number; status: s
     return;
   }
 
-  console.log(updatedCards)
-
   const sqlChunks: SQL[] = [];
   const ids: number[] = [];
 
@@ -115,8 +115,7 @@ export const updateAllCards = async (updatedCards: Array<{ id: number; status: s
     await db.update(cards)
       .set({ status: finalSql })
       .where(inArray(cards.id, ids));
-
-    console.log('Tareas actualizadas correctamente');
+      
     const updatedTasks = await db.select().from(cards).where(inArray(cards.id, ids));
     // Retornamos las tareas actualizadas
     return updatedTasks;

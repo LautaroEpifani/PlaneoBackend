@@ -1,7 +1,6 @@
 import express from 'express';
 import {
   addOneUser,
-  checkSession,
   getAllUsers,
   getOneUser,
   login,

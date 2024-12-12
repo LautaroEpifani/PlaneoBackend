@@ -1,4 +1,4 @@
-import { pgTable, unique, integer, varchar, check, serial, text, timestamp, numeric } from "drizzle-orm/pg-core"
+import { pgTable, foreignKey, unique, integer, varchar, check, serial, text, timestamp, numeric } from "drizzle-orm/pg-core"
 import { sql } from "drizzle-orm"
 
 
@@ -9,8 +9,14 @@ export const users = pgTable("users", {
 	age: integer().notNull(),
 	email: varchar({ length: 255 }).notNull(),
 	password: varchar({ length: 150 }).notNull(),
+	projectId: integer("project_id"),
 }, (table) => {
 	return {
+		fkProjectId: foreignKey({
+			columns: [table.projectId],
+			foreignColumns: [projects.id],
+			name: "fk_project_id"
+		}).onDelete("set null"),
 		usersEmailUnique: unique("users_email_unique").on(table.email),
 	}
 });
@@ -29,4 +35,10 @@ export const cards = pgTable("cards", {
 	return {
 		cardsStatusCheck: check("cards_status_check", sql`(status)::text = ANY ((ARRAY['todo'::character varying, 'in-progress'::character varying, 'done'::character varying])::text[])`),
 	}
+});
+
+export const projects = pgTable("projects", {
+	id: serial().primaryKey().notNull(),
+	name: varchar({ length: 255 }).notNull(),
+	description: text(),
 });

@@ -8,9 +8,7 @@ import cardsRouter from './routes/cardsRoutes';
 import ValidationError from './errors/ValidationError';
 import HttpError from './errors/HttpError';
 // import { v2 as cloudinary } from 'cloudinary'
-import { checkSession } from './controllers/users.controllers';
-import db from './db/connection';
-import { updateAllCards } from './controllers/cards.controllers';
+import { checkSession, createProjectForUser } from './controllers/users.controllers';
 
 
 const app = express();
@@ -35,25 +33,17 @@ app.use('/users', userRouter);
 
 app.use('/cards', cardsRouter);
 
-app.put('/cards/bulk-update', async (req, res) => {
-  const { cards } = req.body;
+app.get('/verifySession', checkSession)
 
-  console.log(cards);
-
+app.post('/createProject', async (req, res) => {
+  const { userId, projectName } = req.body;
   try {
- 
-    const updatedCards = await updateAllCards(cards);
-
- 
-    res.status(200).send({ message: 'Cards updated successfully', cards: updatedCards });
+    const result = await createProjectForUser(userId, projectName);
+    res.status(200).json(result);
   } catch (error) {
-   
-    res.status(500).send({ message: 'Failed to update cards' });
+    res.status(500).json({ message: 'Hubo un error al crear el proyecto.' });
   }
 });
-
-
-app.get('/verifySession', checkSession)
 
 // Middleware 404 not found
 app.use((req, res) => {
@@ -93,6 +83,25 @@ app.use(
 );
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`Escuchando en el puerto ${PORT}...`);
 });
+
+
+const shutdown = () => {
+  console.log("Shutting down server...");
+  server.close(() => {
+    console.log("Server closed gracefully");
+    process.exit(0);
+  });
+
+  // Si el servidor no cierra dentro de 10 segundos, forzamos el cierre
+  setTimeout(() => {
+    console.error("Forcing server shutdown");
+    process.exit(1);
+  }, 10000);
+};
+
+// Escucha señales de terminación
+process.on("SIGINT", shutdown);  // Ctrl + C
+process.on("SIGTERM", shutdown);

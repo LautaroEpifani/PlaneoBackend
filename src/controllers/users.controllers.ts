@@ -3,7 +3,7 @@ import { and, eq } from "drizzle-orm";
 import bcrypt from "bcrypt";
 
 import db from "../db/connection";
-import { users } from "../db/schema";
+import { projects, users } from "../db/schema";
 import { AddUserSchema, IdSchema, LoginSchema } from "../schemas/userSchemas";
 import HttpError from "../errors/HttpError";
 import ValidationError from "../errors/ValidationError";
@@ -132,4 +132,26 @@ async function logout(req: Request, res: Response) {
 }
 
 
-export { getAllUsers, getOneUser, addOneUser, login, checkSession, logout };
+async function createProjectForUser(userId: number, projectName: string) {
+  // Paso 1: Verificar si el proyecto con id = 1 ya existe
+  const existingProject = await db.select().from(projects).where(eq(projects.id, 1)).limit(1); // Usamos limit(1) para obtener un solo resultado
+
+  // Paso 2: Si el proyecto no existe, crearlo con id = 1
+  if (existingProject.length === 0) {
+    await db.insert(projects).values({
+      id: 1,
+      name: projectName,
+      description: 'Este es el único proyecto disponible.',
+    });
+  } else {
+    // Si el proyecto existe, solo actualizar su nombre
+    await db.update(projects).set({ name: projectName }).where(eq(projects.id, 1));
+  }
+
+  // Paso 3: Asociar el usuario con el proyecto id = 1
+  await db.update(users).set({ projectId: 1 }).where(eq(users.id, userId));
+
+  return { message: 'Proyecto creado y asociado exitosamente al usuario.' };
+}
+
+export { getAllUsers, getOneUser, addOneUser, login, checkSession, logout, createProjectForUser };
