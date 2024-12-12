@@ -1,4 +1,4 @@
-import { pgTable, unique, integer, varchar, check, serial, text, timestamp } from "drizzle-orm/pg-core"
+import { pgTable, unique, integer, varchar, check, serial, text, timestamp, numeric } from "drizzle-orm/pg-core"
 import { sql } from "drizzle-orm"
 
 
@@ -24,6 +24,7 @@ export const cards = pgTable("cards", {
 	createdAt: timestamp("created_at", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
 	updatedAt: timestamp("updated_at", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
 	status: varchar({ length: 20 }).default('todo'),
+	order: numeric({ precision: 10, scale:  2 }),
 }, (table) => {
 	return {
 		cardsStatusCheck: check("cards_status_check", sql`(status)::text = ANY ((ARRAY['todo'::character varying, 'in-progress'::character varying, 'done'::character varying])::text[])`),

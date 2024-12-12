@@ -9,6 +9,8 @@ import ValidationError from './errors/ValidationError';
 import HttpError from './errors/HttpError';
 // import { v2 as cloudinary } from 'cloudinary'
 import { checkSession } from './controllers/users.controllers';
+import db from './db/connection';
+import { updateAllCards } from './controllers/cards.controllers';
 
 
 const app = express();
@@ -32,6 +34,24 @@ app.get('/', (req, res) => {
 app.use('/users', userRouter);
 
 app.use('/cards', cardsRouter);
+
+app.put('/cards/bulk-update', async (req, res) => {
+  const { cards } = req.body;
+
+  console.log(cards);
+
+  try {
+ 
+    const updatedCards = await updateAllCards(cards);
+
+ 
+    res.status(200).send({ message: 'Cards updated successfully', cards: updatedCards });
+  } catch (error) {
+   
+    res.status(500).send({ message: 'Failed to update cards' });
+  }
+});
+
 
 app.get('/verifySession', checkSession)
 
