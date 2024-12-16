@@ -3,7 +3,7 @@ import { and, eq } from "drizzle-orm";
 import bcrypt from "bcrypt";
 
 import db from "../db/connection";
-import { projects, users } from "../db/schema";
+import { cards, projects, userProjects, users } from "../db/schema";
 import { AddUserSchema, IdSchema, LoginSchema } from "../schemas/userSchemas";
 import HttpError from "../errors/HttpError";
 import ValidationError from "../errors/ValidationError";
@@ -122,36 +122,73 @@ async function checkSession(req: Request, res: Response) {
 }
 
 async function logout(req: Request, res: Response) {
-  res.clearCookie('access_token', {
+  res.clearCookie("access_token", {
     httpOnly: true,
-    sameSite: 'none',
+    sameSite: "none",
     secure: true,
   });
 
-  res.send({ message: 'Logged out successfully' });
+  res.send({ message: "Logged out successfully" });
 }
-
 
 async function createProjectForUser(userId: number, projectName: string) {
-  // Paso 1: Verificar si el proyecto con id = 1 ya existe
-  const existingProject = await db.select().from(projects).where(eq(projects.id, 1)).limit(1); // Usamos limit(1) para obtener un solo resultado
+  // Paso 1: Verificar si el proyecto con el mismo nombre ya existe
+  const existingProject = await db
+    .select()
+    .from(projects)
+    .innerJoin(userProjects, eq(userProjects.projectId, projects.id))
+    .where(and(eq(userProjects.userId, userId), eq(projects.name, projectName)))
+    .limit(1);
 
-  // Paso 2: Si el proyecto no existe, crearlo con id = 1
-  if (existingProject.length === 0) {
-    await db.insert(projects).values({
-      id: 1,
-      name: projectName,
-      description: 'Este es el único proyecto disponible.',
-    });
-  } else {
-    // Si el proyecto existe, solo actualizar su nombre
-    await db.update(projects).set({ name: projectName }).where(eq(projects.id, 1));
+  if (existingProject.length > 0) {
+    // Paso 2: Si ya existe, devolver un mensaje de error
+    return { message: "No se puede crear un proyecto con el mismo nombre." };
   }
 
-  // Paso 3: Asociar el usuario con el proyecto id = 1
-  await db.update(users).set({ projectId: 1 }).where(eq(users.id, userId));
+  // Paso 3: Crear el nuevo proyecto
+  const newProject = await db
+    .insert(projects)
+    .values({
+      name: projectName,
+    })
+    .returning({ id: projects.id, name: projects.name });
 
-  return { message: 'Proyecto creado y asociado exitosamente al usuario.' };
+  // Paso 4: Asociar el proyecto al usuario en la tabla intermedia
+  await db.insert(userProjects).values({
+    userId: userId,
+    projectId: newProject[0].id,
+  });
+
+  return newProject[0];
 }
 
-export { getAllUsers, getOneUser, addOneUser, login, checkSession, logout, createProjectForUser };
+async function getUserProjects(userId: number) {
+  const data = await db
+    .select()
+    .from(projects)
+    .innerJoin(userProjects, eq(userProjects.projectId, projects.id))
+    .where(eq(userProjects.userId, userId));
+  return data.map((item) => item.projects);
+}
+
+async function deleteProject(projectId: number) {
+  await db.delete(cards).where(eq(cards.projectId, projectId));
+
+
+  await db.delete(userProjects).where(eq(userProjects.projectId, projectId));
+
+  
+  await db.delete(projects).where(eq(projects.id, projectId));
+}
+
+export {
+  getAllUsers,
+  getOneUser,
+  addOneUser,
+  login,
+  checkSession,
+  logout,
+  createProjectForUser,
+  getUserProjects,
+  deleteProject,
+};

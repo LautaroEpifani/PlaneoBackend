@@ -34,10 +34,10 @@ export const getCardById = async (req: Request, res: Response) => {
 // Crear una nueva tarjeta
 export const createCard = async (req: Request, res: Response) => {
   try {
-    const { cardName, description, createdBy, assignedTo, status = 'todo', order } = req.body; // Ahora se incluye el status
+    const { cardName, description, createdBy, assignedTo, status = 'todo', order, projectId } = req.body; // Ahora se incluye el status
     const [newCard] = await db
       .insert(cards)
-      .values({ cardName, description, createdBy, assignedTo, status, order })
+      .values({ cardName, description, createdBy, assignedTo, status, order, projectId })
       .returning();
     res.status(201).send(newCard);
   } catch (error) {
@@ -86,40 +86,5 @@ export const deleteCard = async (req: Request, res: Response) => {
     res.status(200).send({ message: 'Card deleted successfully', deletedCard });  // Usamos send
   } catch (error) {
     res.status(500).send({ error: 'Error deleting card' });
-  }
-};
-
-
-
-export const updateAllCards = async (updatedCards: Array<{ id: number; status: string }>) => {
-  // Verificamos que el array no esté vacío
-  if (updatedCards.length === 0) {
-    console.log("No tasks to update");
-    return;
-  }
-
-  const sqlChunks: SQL[] = [];
-  const ids: number[] = [];
-
-  sqlChunks.push(sql`(case`);
-  for (const card of updatedCards) {
-    sqlChunks.push(sql`when ${cards.id} = ${card.id} then ${card.status}`);
-    ids.push(card.id);
-  }
-  sqlChunks.push(sql`end)`);
-
-  const finalSql: SQL = sql.join(sqlChunks, sql.raw(' '));
-
-  try {
-    // Realizamos la actualización masiva en la base de datos
-    await db.update(cards)
-      .set({ status: finalSql })
-      .where(inArray(cards.id, ids));
-      
-    const updatedTasks = await db.select().from(cards).where(inArray(cards.id, ids));
-    // Retornamos las tareas actualizadas
-    return updatedTasks;
-  } catch (error) {
-    console.error('Error al actualizar las tareas:', error);
   }
 };
